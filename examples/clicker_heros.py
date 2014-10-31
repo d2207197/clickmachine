@@ -20,10 +20,10 @@ def clicker_heros(left, top, right, bottom):
         'scroll down': Coord(0.4817023118111534, 0.9686086335415103),
         'heros skills': Coord(0.17087001171189428, 0.2893414650525326).mxn_points_to(
             Coord(0.36077672439277586, 0.9823266629949208), 7, 5), 
-        'heros upgrade/hire': Coord(0.08318879504871941, 0.2879922834136127).n_points_to(
-            Coord(0.08301363182063286, 0.9558066702075053), 5),
-    }).project_to_space( left = 39.0, top = 198.9609375,
-                         right = 1174.453125, bottom = 838.98046875)
+        'heros upgrade/hire': Coord(0.08301363182063286, 0.9558066702075053).n_points_to(
+            Coord(0.08318879504871941, 0.2879922834136127), 5),
+    }).project_to_space( left = left, top = top,
+                         right = right, bottom = bottom)
 
     
     enable_hero_skills = Actions([ coord.to_click() for coord in coords_map['heros skills']])
@@ -32,8 +32,10 @@ def clicker_heros(left, top, right, bottom):
     
     scroll_up = coords_map['scroll up'].to_click()
     scroll_to_bottom = coords_map['scroll down'].to_clicks(50, 0.01)
-    go_next_area = coords_map['next area'].to_click()
-    go_prev_area = coords_map['prev area'].to_click()
+    go_next_area = coords_map['next area'].to_move()
+    click_next_area = coords_map['next area'].to_click()
+    go_prev_area = coords_map['prev area'].to_move()
+    click_prev_area = coords_map['prev area'].to_click()
 
     attack = Repeat(Actions([
         coords_map['attack'].to_clicks(800),
@@ -41,16 +43,15 @@ def clicker_heros(left, top, right, bottom):
     ]), times = 3)
 
     boss_attack = Actions([
+        click_next_area,
         go_next_area,
         Sleep(1),
-        go_next_area, go_next_area,
+        click_next_area,click_next_area, 
         coords_map['attack'].to_clicks(850),
         Sleep(1),
         go_prev_area,
         Sleep(1),
-        go_next_area,
-        Sleep(1),
-        go_prev_area,
+        click_prev_area,
         Sleep(1),
     ])
 
