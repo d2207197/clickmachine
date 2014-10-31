@@ -60,7 +60,7 @@ $ pip install https://github.com/d2207197/clickmachine/archive/master.zip
 
 ## Examples
 
-`examples/clicker_heros.py`: A robot for [Clicker Heros](clickerheroes.com)
+`examples/clicker_heros.py`: A robot for [Clicker Heros](http://www.clickerheroes.com)
 
 
 
