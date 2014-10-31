@@ -50,6 +50,7 @@ complex_actions.act()
 
 ```
 
+----
 
 ## Install
 
@@ -57,21 +58,22 @@ complex_actions.act()
 $ pip install https://github.com/d2207197/clickmachine/archive/master.zip
 ```
 
+----
 
 ## Examples
 
 `examples/clicker_heros.py`: A robot for [Clicker Heros](http://www.clickerheroes.com)
 
 
-
+----
 ## Tools
 
-### simple_click
+#### simple_click.py
 
-A simple click tool for ClickerHeroes - just perform clicks!
+A tool just performing clicks!
 
-```
-python simple_click.py x y [options]
+```console
+$ simple_click x y [options]
 ```
 
 

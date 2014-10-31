@@ -57,6 +57,9 @@ class ClickerHeroes(object):
 
         freq: int/float
             clicks/second
+
+        screen: int
+            screen width
         """
 
         sensitive = self.NORMAL if 'sensitive' not in kwargs else kwargs["sensitive"]
@@ -74,7 +77,10 @@ class ClickerHeroes(object):
             raise Exception("x and y must be given: run(x=..., y=...)")
 
         ## minimum distance to stop
-        min_dist = max(self.mouse.screen_size())*sensitive
+        screen = 1920 if 'screen' not in kwargs else kwargs['screen']
+        
+        #min_dist = max(self.mouse.screen_size())*sensitive
+        min_dist = screen*sensitive
 
         self.mouse.move(x, y)
 
