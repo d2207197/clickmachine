@@ -3,7 +3,6 @@ from __future__ import division
 import time
 import logging
 
-
 logger = logging.getLogger('Click Machine')
 logger.handlers = []
 logger.setLevel(logging.INFO)
@@ -12,18 +11,14 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
-
-from Quartz import * # for Mac
 from pymouse import PyMouse # PyUserInput required
-
-
 import math
+
 
 class Mouse(PyMouse):
     MIN_DISTANCE = 30
     prev_position = None
-
+    
     def move(self, x, y):
         super(Mouse, self).move(x, y)
         self.prev_position = x, y
@@ -49,19 +44,23 @@ class Mouse(PyMouse):
         self.prev_position = None
 mouse = Mouse()
 
-
 from collections import namedtuple
     
 from abc import ABCMeta, abstractmethod
 
-# class MouseDisturbed(Exception): pass
 import sys
 import getpass
 
+INTERVAL = 0.03
 
+def basicConfig(**options):
+    global INTERVAL
+    INTERVAL = options['interval']
+    
 class Action:
     __metaclass__ = ABCMeta
-    
+    def repeat(self, times = None, interval = INTERVAL):
+        return Repeat(self, times, interval)
     @abstractmethod
     def act(self):
         logger.info(`self`)
@@ -77,22 +76,31 @@ class Action:
                 print '\b\b\b\b\033[K\a',
                 sys.stdout.flush()
                 time.sleep(0.5)
-            # raise MouseDisturbed
         
 
-class Actions(namedtuple('Actions', ['actions', 'interval']), Action):
-    def __new__(cls, actions , interval = 0.03):
-        return super(Actions, cls).__new__(cls, actions, interval)
+class Actions(Action):
+    def __init__(self, *actions, **options):
+        self.interval = options.get('interval', INTERVAL)
+        if not all(isinstance(action, Action) for action in actions):
+            raise TypeError
+        self.actions = actions
+    def interval(self, interval = INTERVAL):
+        return Actions(*self.actions, interval = interval)
     def act(self):
         super(Actions, self).act()
         for action in self.actions:
             time.sleep(self.interval)
             action.act()
+    def __repr__(self):
+        return '{classname}({actions})'.format(
+            classname = self.__class__.__name__,
+            actions = ', '.join(map(repr, self.actions)))
 
-import time
 import itertools
 class Repeat ( namedtuple('Repeat', ['action', 'times', 'interval' ]), Action ):
-    def __new__(cls, action , times = None, interval = 0.03):
+    def __new__(cls, action , times = None, interval = INTERVAL):
+        if not isinstance(action, Action):
+            raise TypeError('Can\'t Repeat(object of {}). Should be an object of Move, Click, Sleep, Actions ...'.format(action.__class__.__name__))
         return super(Repeat, cls).__new__(cls, action, times, interval)
     def act(self):
         super(Repeat, self).act()
@@ -107,22 +115,30 @@ class Repeat ( namedtuple('Repeat', ['action', 'times', 'interval' ]), Action ):
                 
                
 class Move(namedtuple('Move', [ 'x', 'y' ]),Action):
+    def to_click(self):
+        return Click(*self)
     def act(self):
         super(Move, self).act()
         mouse.move(self.x, self.y)
 
 class Click(namedtuple('Click', ['x', 'y']), Action):
+    def to_click(self):
+        return Click(*self)
     def __new__(cls, x, y ):
         return super(Click, cls).__new__(cls, x,y)
     def act(self):
         super(Click, self).act()
         mouse.click(self.x, self.y)
 
-class Clicks(namedtuple('Clicks', [ 'x', 'y' , 'times', 'interval' ]), Action):
-    def __new__(cls, x, y ,  times = 1, interval = 0.03):
-        self = super(Clicks, cls).__new__(cls, x, y, times=times, interval=interval)
-        self.act = Repeat(Click(x, y), times, interval).act
-        return self
+# class Clicks(namedtuple('Clicks', [ 'x', 'y' , 'times', 'interval' ]), Action):
+#     def to_click(self):
+#         return Click(self.x, self.y)
+#     def to_move(self):
+#         return Move(self.x, self.y)
+#     def __new__(cls, x, y ,  times = 1, interval = INTERVAL):
+#         self = super(Clicks, cls).__new__(cls, x, y, times=times, interval=interval)
+#         self.act = Repeat(Click(x, y), times, interval).act
+#         return self
 
 class Sleep(namedtuple('Sleep', ['seconds']), Action):
     def __new__(cls, seconds = 1):
@@ -132,10 +148,6 @@ class Sleep(namedtuple('Sleep', ['seconds']), Action):
         time.sleep(self.seconds)
 
 
-
-
-
-from abc import ABCMeta, abstractmethod
 class Number:
     __metaclass__=ABCMeta
 Number.register(int)
@@ -183,8 +195,8 @@ class Coord(namedtuple('Coord', ['x', 'y'])):
         return Coord(left + self.x * (right - left), top + self.y * (bottom - top))
     def to_click(self):
         return Click(*self)
-    def to_clicks(self, times = 1, interval = 0.03):
-        return Clicks(*self, times = times, interval = interval)
+    # def to_clicks(self, times = 1, interval = INTERVAL):
+        # return Clicks(*self, times = times, interval = interval)
     def to_move(self):
         return Move(*self)
 
@@ -207,22 +219,21 @@ if __name__ == '__main__':
     # Click one time
     Click(200, 200).act()
     # Click 3 times
-    Clicks(300, 300, times = 3, interval = 0.5).act()
+    # Clicks(300, 300, times = 3, interval = 0.5).act()
 
-    i_got_a_move = Actions([
+    i_got_a_move = Actions(
         Move(200, 100),
         Move(300, 200),
         Repeat(Sleep(0.5), times = 3)
-    ])
+    )
 
     # Series actions
-    i_got_more_moves = Repeat(
-        Actions([
+    i_got_more_moves = Actions(
             Move(500, 500),
             Click(200, 200),
-            Clicks(300, 300, times = 3, interval = 0.5),
-            i_got_a_move,
-        ], interval = 1))
+            # Clicks(300, 300, times = 3, interval = 0.5),
+            i_got_a_move
+        ).interval(1).repeat()
 
     i_got_more_moves.act()
     

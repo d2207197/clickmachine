@@ -1,6 +1,6 @@
 
 from __future__ import division
-from clickmachine import Click, Clicks, Actions, Sleep, Repeat, Move, Coord, CoordsMap
+from clickmachine import Actions, Sleep, Coord, CoordsMap
 
 def clicker_heros(left, top, right, bottom):
 
@@ -26,55 +26,60 @@ def clicker_heros(left, top, right, bottom):
                          right = right, bottom = bottom)
 
     
-    enable_hero_skills = Actions([ coord.to_click() for coord in coords_map['heros skills']])
-    upgrade_heros = Actions([ coord.to_click() for coord in coords_map['heros upgrade/hire']])
-    pick_candies = Actions([ coord.to_click() for coord in coords_map['candy positions']])
+    enable_hero_skills = Actions(*[ coord.to_click() for coord in coords_map['heros skills']])
+    upgrade_heros = Actions(*[ coord.to_click() for coord in coords_map['heros upgrade/hire']])
+    pick_candies = Actions(*[ coord.to_click() for coord in coords_map['candy positions']])
     
+    attack = coords_map['attack'].to_click()
+
     scroll_up = coords_map['scroll up'].to_click()
-    scroll_to_bottom = coords_map['scroll down'].to_clicks(50, 0.01)
+    scroll_to_bottom = coords_map['scroll down'].to_click().repeat(50, 0.01)
+    
     go_next_area = coords_map['next area'].to_move()
-    click_next_area = coords_map['next area'].to_click()
+    click_next_area = go_next_area.to_click()
+
     go_prev_area = coords_map['prev area'].to_move()
-    click_prev_area = coords_map['prev area'].to_click()
+    click_prev_area = go_prev_area.to_click()
 
-    attack = Repeat(Actions([
-        coords_map['attack'].to_clicks(800),
+
+    attack_routine = Actions(
+        attack.repeat(800),
         pick_candies
-    ]), times = 3)
+    ).repeat(times = 3)
 
-    boss_attack = Actions([
+    boss_attack_routine = Actions(
         click_next_area,
         go_next_area,
-        Sleep(1),
-        click_next_area,click_next_area, 
-        coords_map['attack'].to_clicks(850),
-        Sleep(1),
-        go_prev_area,
-        Sleep(1),
-        click_prev_area,
-        Sleep(1),
-    ])
+        Sleep(0.5),
+        click_next_area.repeat(2),
 
-    do_upgrades = Actions([
+        attack.repeat(850),
+
+        go_prev_area,
+        Sleep(0.5),
+        click_prev_area,
+        Sleep(0.5),
+    )
+
+    do_upgrades = Actions(
         scroll_to_bottom,
         scroll_up, 
-        Repeat(Actions([
+        Actions(
             scroll_up,
             enable_hero_skills,
             upgrade_heros,
-        ]), times = 5)
-    ])
+        ).repeat(times = 4)
+    )
 
-    whole_procesure = Repeat(Actions([
-        boss_attack,
-        Repeat(Actions([
-            attack,
+    whole_procesure = Actions(
+        boss_attack_routine,
+        Actions(
+            attack_routine,
             do_upgrades
-        ]), times = 5 )
-    ]))
+        ).repeat(times = 5 )
+    ).repeat()
 
     whole_procesure.act()
-    
     
         
 if __name__ == '__main__':
